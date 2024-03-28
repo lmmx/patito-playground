@@ -67,3 +67,16 @@ What might be unfamiliar here is that **Patito models aren't validated upon inge
 Look again at the last field and you can see why: it doesn't make sense to validate dataset-level
 constraints on a single element of a dataset, in this case whether the sum of values adds up to 100%.
 (The only situation that'd work in would be the unrealistic trivial case of a dataset of 1 item).
+
+Here's what you get when you `Product.model_validate(data)` with a Python dict of some data,
+or a 'row' from this imagined database.
+
+```
+Product(product_id=1, name='apple', temperature_zone='cold', demand_percentage=50.0)
+```
+
+This is just Pydantic functionality, nothing special here.
+
+## Reading data into Patito
+
+
