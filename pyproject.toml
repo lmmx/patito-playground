@@ -1,7 +1,7 @@
 [project]
 name = "patito"
 version = "0.1.0"
-description = "Default template for PDM package"
+description = "Introduction to the Patito library (combining Pydantic and Polars)"
 authors = [
     {name = "Louis Maddox", email = "louismmx@gmail.com"},
 ]
