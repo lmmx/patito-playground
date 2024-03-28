@@ -1,5 +1,5 @@
 [project]
-name = "patito"
+name = "patito_playground"
 version = "0.1.0"
 description = "Introduction to the Patito library (combining Pydantic and Polars)"
 authors = [
@@ -14,4 +14,4 @@ license = {text = "MIT"}
 
 
 [tool.pdm]
-distribution = false
+distribution = true
