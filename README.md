@@ -52,7 +52,7 @@ so you get a nice shorthand for the column name to use in expressions, a bit lik
 
 I like Pydantic models for progressively whittling out the shape of a dataset (or
 making the 'map' to the 'territory' of the underlying dataset values' ground truth).
-Typically, if your code's wrong (your map isn't quite right somehow), you'll get a single error,
+Typically, if your data model's wrong (your map isn't quite right somehow), you'll get a single error,
 and often not even an informative one. A key design feature of Pydantic is that validation errors
 aren't collected until all data was validated, so at the individual data point level
 (e.g. an individual product) you would see all the ways it was invalid not just the first
@@ -62,3 +62,8 @@ In practice, this means you can iterate: if you solve a little problem, you see 
 report disappear, and you can tell you're moving in the right direction. In this case,
 you might be adding string values to the `Literal` one by one and re-running (if
 there are tons of error messages this might make it more feasible to tackle at all).
+
+What might be unfamiliar here is that **Patito models aren't validated upon ingestion**.
+Look again at the last field and you can see why: it doesn't make sense to validate dataset-level
+constraints on a single element of a dataset, in this case whether the sum of values adds up to 100%.
+(The only situation that'd work in would be the unrealistic trivial case of a dataset of 1 item).

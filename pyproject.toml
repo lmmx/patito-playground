@@ -12,6 +12,8 @@ requires-python = "==3.10.*"
 readme = "README.md"
 license = {text = "MIT"}
 
+[project.scripts]
+patito-products = "patito_playground.products:main"
 
 [tool.pdm]
 distribution = true
