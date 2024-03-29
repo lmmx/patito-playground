@@ -77,6 +77,106 @@ Product(product_id=1, name='apple', temperature_zone='cold', demand_percentage=5
 
 This is just Pydantic functionality, nothing special here.
 
-## Reading data into Patito
+Now if we put it in a Patito DataFrame instead
 
+```py
+Product.DataFrame(data)
+```
 
+```
+shape: (1, 4)
+┌────────────┬───────┬──────────────────┬───────────────────┐
+│ product_id ┆ name  ┆ temperature_zone ┆ demand_percentage │
+│ ---        ┆ ---   ┆ ---              ┆ ---               │
+│ i64        ┆ str   ┆ str              ┆ i64               │
+╞════════════╪═══════╪══════════════════╪═══════════════════╡
+│ 1          ┆ apple ┆ cold             ┆ 50                │
+└────────────┴───────┴──────────────────┴───────────────────┘
+```
+
+The `validate` syntax is intended for use not at the data point level (as `model_validate` is)
+but at the DataFrame level, on the basis that a dataset is just a sequence of the same row schema applied many times.
+
+If we use the `DataFrame` constructor from our model `Product` like this,
+we can then call the `validate()` method, which is going to complain that our
+dataset of one item doesn't add up to 100%. We can fix it by adding a 2nd item:
+
+```py
+>>> Product.DataFrame([data]).validate()
+Traceback (most recent call last):
+```
+
+<details><summary>Click to show traceback error internals</summary>
+
+```py
+  File "<stdin>", line 1, in <module>
+  File "/home/louis/miniconda3/envs/patito/lib/python3.10/site-packages/patito/polars.py", line 612, in validate
+    self.model.validate(dataframe=self, columns=columns, **kwargs)
+  File "/home/louis/miniconda3/envs/patito/lib/python3.10/site-packages/patito/pydantic.py", line 498, in validate
+    validate(dataframe=dataframe, columns=columns, schema=cls, **kwargs)
+  File "/home/louis/miniconda3/envs/patito/lib/python3.10/site-packages/patito/validators.py", line 342, in validate
+    raise DataFrameValidationError(errors=errors, model=schema)
+```
+
+</details>
+
+We got 2 errors: the demand percentage doesn't add up to 100% and it was an integer value.
+Note that one of these errors is a columnar error and the other is row-wise!
+
+```py
+patito.exceptions.DataFrameValidationError: 2 validation errors for Product
+demand_percentage
+  Polars dtype Int64 does not match model field type. (type=type_error.columndtype)
+demand_percentage
+  1 row does not match custom constraints. (type=value_error.rowvalue)
+```
+
+Adding another item, we can make the demand percentage add up to 100%:
+
+```py
+Ingested a basket:
+shape: (2, 4)
+┌────────────┬────────┬──────────────────┬───────────────────┐
+│ product_id ┆ name   ┆ temperature_zone ┆ demand_percentage │
+│ ---        ┆ ---    ┆ ---              ┆ ---               │
+│ i64        ┆ str    ┆ str              ┆ i64               │
+╞════════════╪════════╪══════════════════╪═══════════════════╡
+│ 1          ┆ apple  ┆ cold             ┆ 50                │
+│ 2          ┆ banana ┆ dry              ┆ 50                │
+└────────────┴────────┴──────────────────┴───────────────────┘
+Traceback (most recent call last):
+  File "/home/louis/lab/patito/patito-playground/src/patito_playground/products.py", line 26, in <module>
+    fruit_basket.validate()
+    ...
+patito.exceptions.DataFrameValidationError: 1 validation error for Product
+demand_percentage
+  Polars dtype Int64 does not match model field type. (type=type_error.columndtype)
+```
+
+In this case our data is wrong, but we can still coerce it using Pydantic instead of erroring,
+using a Pydantic TypeAdapter to first ingest the models, then apply DataFrame validation in a 2nd step.
+
+```py
+>>> from pydantic import TypeAdapter
+>>> ta = TypeAdapter(list[Product])
+>>> products = ta.validate_python(basket)
+>>> products_df = Product.DataFrame(products).validate()
+```
+
+That API looks a bit ropey but the functionality is there which is what matters!
+
+```py
+Ingested a product:
+Product(product_id=1, name='apple', temperature_zone='cold', demand_percentage=50.0)
+Ingested a basket:
+shape: (2, 4)
+┌────────────┬────────┬──────────────────┬───────────────────┐
+│ product_id ┆ name   ┆ temperature_zone ┆ demand_percentage │
+│ ---        ┆ ---    ┆ ---              ┆ ---               │
+│ i64        ┆ str    ┆ str              ┆ f64               │
+╞════════════╪════════╪══════════════════╪═══════════════════╡
+│ 1          ┆ apple  ┆ cold             ┆ 50.0              │
+│ 2          ┆ banana ┆ dry              ┆ 50.0              │
+└────────────┴────────┴──────────────────┴───────────────────┘
+The DataFrame was a valid Product dataset
+```
